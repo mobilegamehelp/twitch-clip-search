@@ -1,71 +1,68 @@
-const CLIENT_ID = 'gp762nuuoqcoxypju8c569th9wz7q5'; // Replace with Twitch Client ID
-const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm'; // Replace with Twitch Access Token
+// Twitch API Credentials
+const CLIENT_ID = 'gp762nuuoqcoxypju8c569th9wz7q5';
+const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
+const GAME_ID = '21779'; // League of Legends game ID
 
-document.getElementById('search').addEventListener('click', async () => {
-  const days = document.getElementById('timeRange').value;
-  if (!days) return alert('Enter a time range.');
+// Helper function to fetch clips
+async function fetchClips(days) {
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = 'Fetching clips...';
 
-  const resultsDiv = document.getElementById('results');
-  resultsDiv.innerHTML = 'Searching...';
+    try {
+        // Calculate the start and end date
+        const endDate = new Date().toISOString();
+        const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-  try {
-    const endDate = new Date().toISOString();
-    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+        // Make the API request
+        const response = await fetch(
+            `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}`,
+            {
+                headers: {
+                    'Client-ID': CLIENT_ID,
+                    'Authorization': `Bearer ${ACCESS_TOKEN}`,
+                },
+            }
+        );
 
-    const clipsResponse = await fetch(`https://api.twitch.tv/helix/clips?broadcaster_id=123456&started_at=${startDate}&ended_at=${endDate}`, {
-  headers: {
-    'Client-ID': CLIENT_ID,
-    'Authorization': `Bearer ${ACCESS_TOKEN}`,
-  },
-});
-    const clipsData = await clipsResponse.json();
+        // Check for errors in the response
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status} - ${response.statusText}`);
+        }
 
-    resultsDiv.innerHTML = '';
-    clipsData.data.forEach(clip => {
-      const clipDiv = document.createElement('div');
-      clipDiv.className = 'clip';
-      clipDiv.innerHTML = `
-        <h3>${clip.title}</h3>
-        <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
-        <a href="${clip.url}" target="_blank">Watch Clip</a>
-      `;
-      resultsDiv.appendChild(clipDiv);
-    });
-  } catch (error) {
-    resultsDiv.innerHTML = 'An error occurred.';
-    console.error(error);
-  }
-});
-try {
-  const clipsResponse = await fetch(`https://api.twitch.tv/helix/clips?started_at=${startDate}&ended_at=${endDate}`, {
-    headers: {
-      'Client-ID': CLIENT_ID,
-      'Authorization': `Bearer ${ACCESS_TOKEN}`,
-    },
-  });
+        // Parse the JSON response
+        const data = await response.json();
+        if (!data.data || data.data.length === 0) {
+            throw new Error('No clips found for the specified time range.');
+        }
 
-  if (!clipsResponse.ok) {
-    throw new Error(`API error: ${clipsResponse.status} - ${clipsResponse.statusText}`);
-  }
-
-  const clipsData = await clipsResponse.json();
-  if (!clipsData.data || clipsData.data.length === 0) {
-    throw new Error('No clips found for the specified time range.');
-  }
-
-  resultsDiv.innerHTML = '';
-  clipsData.data.forEach(clip => {
-    const clipDiv = document.createElement('div');
-    clipDiv.className = 'clip';
-    clipDiv.innerHTML = `
-      <h3>${clip.title}</h3>
-      <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
-      <a href="${clip.url}" target="_blank">Watch Clip</a>
-    `;
-    resultsDiv.appendChild(clipDiv);
-  });
-} catch (error) {
-  resultsDiv.innerHTML = `Error: ${error.message}`;
-  console.error(error);
+        // Display the clips
+        resultsDiv.innerHTML = '';
+        data.data.forEach((clip) => {
+            const clipDiv = document.createElement('div');
+            clipDiv.className = 'clip';
+            clipDiv.innerHTML = `
+                <h3>${clip.title}</h3>
+                <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
+                <p><strong>Views:</strong> ${clip.view_count}</p>
+                <a href="${clip.url}" target="_blank">Watch Clip</a>
+            `;
+            resultsDiv.appendChild(clipDiv);
+        });
+    } catch (error) {
+        resultsDiv.innerHTML = `Error: ${error.message}`;
+        console.error(error);
+    }
 }
 
+// Event listener for the search button
+document.getElementById('search').addEventListener('click', () => {
+    const daysInput = document.getElementById('timeRange').value;
+    const days = parseInt(daysInput, 10);
+
+    if (isNaN(days) || days <= 0) {
+        alert('Please enter a valid number of days.');
+        return;
+    }
+
+    fetchClips(days);
+});
