@@ -1,5 +1,5 @@
-const CLIENT_ID = 'your_twitch_client_id'; // Replace with Twitch Client ID
-const ACCESS_TOKEN = 'your_access_token'; // Replace with Twitch Access Token
+const CLIENT_ID = 'All Clip Search'; // Replace with Twitch Client ID
+const ACCESS_TOKEN = 'oj5qqv31k05b5gbzbmiluzrfoo7g0i'; // Replace with Twitch Access Token
 
 document.getElementById('search').addEventListener('click', async () => {
   const days = document.getElementById('timeRange').value;
