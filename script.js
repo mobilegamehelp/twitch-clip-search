@@ -12,12 +12,12 @@ document.getElementById('search').addEventListener('click', async () => {
     const endDate = new Date().toISOString();
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-    const clipsResponse = await fetch(`https://api.twitch.tv/helix/clips?started_at=${startDate}&ended_at=${endDate}`, {
-      headers: {
-        'Client-ID': CLIENT_ID,
-        'Authorization': `Bearer ${ACCESS_TOKEN}`,
-      },
-    });
+    const clipsResponse = await fetch(`https://api.twitch.tv/helix/clips?broadcaster_id=123456&started_at=${startDate}&ended_at=${endDate}`, {
+  headers: {
+    'Client-ID': CLIENT_ID,
+    'Authorization': `Bearer ${ACCESS_TOKEN}`,
+  },
+});
     const clipsData = await clipsResponse.json();
 
     resultsDiv.innerHTML = '';
@@ -36,3 +36,36 @@ document.getElementById('search').addEventListener('click', async () => {
     console.error(error);
   }
 });
+try {
+  const clipsResponse = await fetch(`https://api.twitch.tv/helix/clips?started_at=${startDate}&ended_at=${endDate}`, {
+    headers: {
+      'Client-ID': CLIENT_ID,
+      'Authorization': `Bearer ${ACCESS_TOKEN}`,
+    },
+  });
+
+  if (!clipsResponse.ok) {
+    throw new Error(`API error: ${clipsResponse.status} - ${clipsResponse.statusText}`);
+  }
+
+  const clipsData = await clipsResponse.json();
+  if (!clipsData.data || clipsData.data.length === 0) {
+    throw new Error('No clips found for the specified time range.');
+  }
+
+  resultsDiv.innerHTML = '';
+  clipsData.data.forEach(clip => {
+    const clipDiv = document.createElement('div');
+    clipDiv.className = 'clip';
+    clipDiv.innerHTML = `
+      <h3>${clip.title}</h3>
+      <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
+      <a href="${clip.url}" target="_blank">Watch Clip</a>
+    `;
+    resultsDiv.appendChild(clipDiv);
+  });
+} catch (error) {
+  resultsDiv.innerHTML = `Error: ${error.message}`;
+  console.error(error);
+}
+
